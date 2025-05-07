@@ -1,44 +1,63 @@
 <!DOCTYPE html>
-<html lang="hu">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>RSA Chat</title>
-  <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="style.css" />
-  <script defer src="app.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chat Room Demo</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 1rem; }
+    #messages { height: 60vh; overflow-y: auto; border: 1px solid #ccc; padding: .5rem; margin-bottom: 1rem; }
+    #messages div { margin-bottom: .25rem; }
+    #status { font-size: .8rem; color: #555; }
+  </style>
 </head>
 <body>
-  <div id="modeSelect">
-    <h1>RSA Chat</h1>
-    <button id="createBtn">Új szoba létrehozása</button>
-    <button id="joinBtn">Csatlakozás meglévő szobához</button>
+  <h1>Chat Room Demo</h1>
+  <div>
+    <label>Room ID: <input id="roomId" value="demo-room" /></label>
+    <button id="joinBtn">Join Room</button>
   </div>
+  <div id="status"></div>
+  <div id="messages"></div>
+  <input id="msgInput" placeholder="Type a message" style="width:80%" />
+  <button id="sendBtn">Send</button>
 
-  <div id="createView" style="display: none;">
-    <h2>Szoba létrehozása</h2>
-    <p>Szobaazonosító: <strong id="generatedRoomId"></strong></p>
-    <input type="password" id="createPass" placeholder="Szobajelszó" />
-    <input type="text" id="createNick" placeholder="Felhasználónév (3-9 karakter)" />
-    <button id="createConfirm">Szoba létrehozása és belépés</button>
-    <p id="createError" style="color: red;"></p>
-  </div>
+  <script>
+    const ws = new WebSocket(`ws://${location.host}`);
+    const status = document.getElementById('status');
+    const messages = document.getElementById('messages');
+    const roomIdInput = document.getElementById('roomId');
+    const joinBtn = document.getElementById('joinBtn');
+    const msgInput = document.getElementById('msgInput');
+    const sendBtn = document.getElementById('sendBtn');
 
-  <div id="joinView" style="display: none;">
-    <h2>Csatlakozás szobához</h2>
-    <input type="text" id="joinRoomId" placeholder="Szobaazonosító (9 karakter)" />
-    <input type="password" id="joinPass" placeholder="Szobajelszó" />
-    <input type="text" id="joinNick" placeholder="Felhasználónév (3-9 karakter)" />
-    <button id="joinConfirm">Belépés</button>
-    <p id="joinError" style="color: red;"></p>
-  </div>
+    let joined = false;
 
-  <div id="chat" style="display: none;">
-    <h2 id="roomLabel"></h2>
-    <textarea id="messageInput" placeholder="Írd be az üzenetet (max 120 karakter)"></textarea>
-    <button id="sendButton">Küldés</button>
-    <h3>Beérkező üzenet:</h3>
-    <pre id="output"></pre>
-  </div>
+    ws.onopen = () => status.textContent = 'WebSocket connected.';
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.type === 'room.message') {
+        const div = document.createElement('div');
+        div.textContent = `[${new Date(data.sentAt).toLocaleTimeString()}] ${data.authorId}: ${data.content}`;
+        messages.appendChild(div);
+        messages.scrollTop = messages.scrollHeight;
+      }
+    };
+
+    joinBtn.onclick = () => {
+      if (!joined) {
+        ws.send(JSON.stringify({ type: 'join', roomId: roomIdInput.value }));
+        joined = true;
+        status.textContent = `Joined room ${roomIdInput.value}`;
+      }
+    };
+    sendBtn.onclick = () => {
+      if (!joined) return alert('Join a room first');
+      const content = msgInput.value.trim();
+      if (!content) return;
+      ws.send(JSON.stringify({ type: 'message', content }));
+      msgInput.value = '';
+    };
+  </script>
 </body>
 </html>
