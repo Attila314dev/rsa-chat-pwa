@@ -1,5 +1,11 @@
-# Object file
-*.o
+# OS / IDE
+.DS_Store
+*.log
+*.swp
+.idea/
+.vscode/
 
-# Ada Library Information
-*.ali
+# Node (ha bővülne később)
+node_modules/
+dist/
+build/
