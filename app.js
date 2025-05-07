@@ -1,5 +1,16 @@
 document.getElementById('sendButton').addEventListener('click', async () => {
   const message = document.getElementById('messageInput').value;
+  const socket = new WebSocket('wss://rsa-chat-server.onrender.com');
+
+socket.addEventListener('open', () => {
+  console.log('Kapcsolódva a WebSocket szerverhez');
+});
+
+socket.addEventListener('message', event => {
+  const data = event.data;
+  // Itt dekódolhatod, visszafejtheted az üzenetet
+  console.log('Kapott üzenet:', data);
+});
   if (message.length > 120) {
     alert('Az üzenet legfeljebb 120 karakter lehet.');
     return;
