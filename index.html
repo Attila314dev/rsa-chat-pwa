@@ -9,10 +9,21 @@
   <script defer src="app.js"></script>
 </head>
 <body>
-  <h1>RSA Chat</h1>
-  <textarea id="messageInput" placeholder="Írd be az üzenetet (max 120 karakter)"></textarea>
-  <button id="sendButton">Küldés</button>
-  <h2>Visszafejtett üzenet:</h2>
-  <pre id="output"></pre>
+  <div id="login">
+    <h1>Szoba belépés</h1>
+    <input type="text" id="roomId" placeholder="Szobaazonosító (pl. abc123xyz)" />
+    <input type="password" id="roomPass" placeholder="Szobajelszó" />
+    <input type="text" id="nickname" placeholder="Felhasználónév (3-9 karakter)" />
+    <button id="joinBtn">Belépés</button>
+    <p id="errorMsg" style="color: red;"></p>
+  </div>
+
+  <div id="chat" style="display: none;">
+    <h2 id="roomLabel"></h2>
+    <textarea id="messageInput" placeholder="Írd be az üzenetet (max 120 karakter)"></textarea>
+    <button id="sendButton">Küldés</button>
+    <h3>Beérkező üzenet:</h3>
+    <pre id="output"></pre>
+  </div>
 </body>
 </html>
