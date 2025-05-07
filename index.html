@@ -9,13 +9,28 @@
   <script defer src="app.js"></script>
 </head>
 <body>
-  <div id="login">
-    <h1>Szoba belépés</h1>
-    <input type="text" id="roomId" placeholder="Szobaazonosító (pl. abc123xyz)" />
-    <input type="password" id="roomPass" placeholder="Szobajelszó" />
-    <input type="text" id="nickname" placeholder="Felhasználónév (3-9 karakter)" />
-    <button id="joinBtn">Belépés</button>
-    <p id="errorMsg" style="color: red;"></p>
+  <div id="modeSelect">
+    <h1>RSA Chat</h1>
+    <button id="createBtn">Új szoba létrehozása</button>
+    <button id="joinBtn">Csatlakozás meglévő szobához</button>
+  </div>
+
+  <div id="createView" style="display: none;">
+    <h2>Szoba létrehozása</h2>
+    <p>Szobaazonosító: <strong id="generatedRoomId"></strong></p>
+    <input type="password" id="createPass" placeholder="Szobajelszó" />
+    <input type="text" id="createNick" placeholder="Felhasználónév (3-9 karakter)" />
+    <button id="createConfirm">Szoba létrehozása és belépés</button>
+    <p id="createError" style="color: red;"></p>
+  </div>
+
+  <div id="joinView" style="display: none;">
+    <h2>Csatlakozás szobához</h2>
+    <input type="text" id="joinRoomId" placeholder="Szobaazonosító (9 karakter)" />
+    <input type="password" id="joinPass" placeholder="Szobajelszó" />
+    <input type="text" id="joinNick" placeholder="Felhasználónév (3-9 karakter)" />
+    <button id="joinConfirm">Belépés</button>
+    <p id="joinError" style="color: red;"></p>
   </div>
 
   <div id="chat" style="display: none;">
