@@ -1,36 +1,85 @@
 const visuallySimilar = ['i', 'l', '1', 'o', '0', 'O'];
-const roomMembers = []; // Lokálisan nyilvántartott nevek (ez a kliens tudja csak)
+const roomMembers = [];
+let myPrivateKey, myPublicKey, myNickname, myRoom, isAdmin = false;
 
-document.getElementById('joinBtn').addEventListener('click', async () => {
-  const roomId = document.getElementById('roomId').value.trim();
-  const roomPass = document.getElementById('roomPass').value.trim();
-  const nickname = document.getElementById('nickname').value.trim();
-  const errorMsg = document.getElementById('errorMsg');
+// Segédfüggvények
+function simplify(name) {
+  return name.toLowerCase().replace(/[ilo0]/g, '*');
+}
+function showError(id, msg) {
+  document.getElementById(id).textContent = msg;
+}
 
-  // Alap validációk
+// Véletlen szoba-ID generátor
+function generateRoomId() {
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  let out = '';
+  for (let i = 0; i < 9; i++) out += chars.charAt(Math.floor(Math.random() * chars.length));
+  return out;
+}
+
+// Nézetváltók
+document.getElementById('createBtn').addEventListener('click', () => {
+  const id = generateRoomId();
+  myRoom = id;
+  document.getElementById('generatedRoomId').textContent = id;
+  document.getElementById('modeSelect').style.display = 'none';
+  document.getElementById('createView').style.display = 'block';
+});
+
+document.getElementById('joinBtn').addEventListener('click', () => {
+  document.getElementById('modeSelect').style.display = 'none';
+  document.getElementById('joinView').style.display = 'block';
+});
+
+// Létrehozás megerősítése
+document.getElementById('createConfirm').addEventListener('click', async () => {
+  const pass = document.getElementById('createPass').value.trim();
+  const nick = document.getElementById('createNick').value.trim();
+
+  if (pass.length < 4) return showError('createError', 'Jelszó túl rövid');
+  if (!validNick(nick, roomMembers)) return;
+
+  await enterRoom(nick, myRoom, true);
+});
+
+// Csatlakozás megerősítése
+document.getElementById('joinConfirm').addEventListener('click', async () => {
+  const roomId = document.getElementById('joinRoomId').value.trim();
+  const pass = document.getElementById('joinPass').value.trim();
+  const nick = document.getElementById('joinNick').value.trim();
+
   if (roomId.length !== 9 || !/^[a-z0-9]+$/.test(roomId)) {
-    return showError("Érvénytelen szobaazonosító (9 kisbetű/szám)");
+    return showError('joinError', 'Érvénytelen szobaazonosító');
   }
+  if (pass.length < 4) return showError('joinError', 'Jelszó túl rövid');
+  if (!validNick(nick, roomMembers)) return;
 
-  if (roomPass.length < 4) {
-    return showError("A jelszó túl rövid");
+  myRoom = roomId;
+  await enterRoom(nick, myRoom, false);
+});
+
+// Névellenőrzés
+function validNick(nick, members) {
+  const simp = simplify(nick);
+  const conflict = members.find(name => simplify(name) === simp);
+  if (nick.length < 3 || nick.length > 9) {
+    showError('createError', 'Név 3–9 karakter legyen');
+    return false;
   }
-
-  if (nickname.length < 3 || nickname.length > 9) {
-    return showError("A név 3-9 karakter között lehet");
-  }
-
-  // Névütközés és vizuális hasonlóság ellenőrzés
-  const simplified = simplify(nickname);
-  const conflict = roomMembers.find(name => simplify(name) === simplified);
   if (conflict) {
-    return showError(`Ez a név (vagy hasonló) már foglalt: ${conflict}`);
+    showError('createError', `Hasonló név már van: ${conflict}`);
+    return false;
   }
+  return true;
+}
 
-  // Elfogadott név
-  roomMembers.push(nickname);
+// Belépés szobába (mindkét irányból hívható)
+async function enterRoom(nick, roomId, adminFlag) {
+  myNickname = nick;
+  isAdmin = adminFlag;
+  roomMembers.push(nick);
 
-  // Kulcspár generálás
   const keyPair = await window.crypto.subtle.generateKey(
     {
       name: "RSA-OAEP",
@@ -42,22 +91,11 @@ document.getElementById('joinBtn').addEventListener('click', async () => {
     ["encrypt", "decrypt"]
   );
 
-  window.myPrivateKey = keyPair.privateKey;
-  window.myPublicKey = keyPair.publicKey;
-  window.myNickname = nickname;
-  window.myRoom = roomId;
+  myPrivateKey = keyPair.privateKey;
+  myPublicKey = keyPair.publicKey;
 
-  // Tovább a chathez
-  document.getElementById('login').style.display = 'none';
+  document.getElementById('createView').style.display = 'none';
+  document.getElementById('joinView').style.display = 'none';
   document.getElementById('chat').style.display = 'block';
-  document.getElementById('roomLabel').textContent = `Szoba: ${roomId}, Név: ${nickname}`;
-  errorMsg.textContent = '';
-});
-
-function simplify(name) {
-  return name.toLowerCase().replace(/[ilo0]/g, '*');
-}
-
-function showError(msg) {
-  document.getElementById('errorMsg').textContent = msg;
+  document.getElementById('roomLabel').textContent = `Szoba: ${roomId} | Név: ${nick} | ${isAdmin ? 'ADMIN' : ''}`;
 }
