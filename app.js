@@ -1,16 +1,35 @@
+let socket;
+let myPrivateKey;
+
+window.addEventListener('load', () => {
+  socket = new WebSocket('wss://rsa-chat-server.onrender.com');
+
+  socket.addEventListener('open', () => {
+    console.log('Kapcsolódva a WebSocket szerverhez');
+  });
+
+  socket.addEventListener('message', async event => {
+    const data = JSON.parse(event.data);
+    const encrypted = base64ToArrayBuffer(data.encrypted);
+
+    try {
+      const decrypted = await window.crypto.subtle.decrypt(
+        { name: "RSA-OAEP" },
+        myPrivateKey,
+        encrypted
+      );
+
+      const decoder = new TextDecoder();
+      const plain = decoder.decode(decrypted);
+      document.getElementById('output').textContent = plain;
+    } catch (err) {
+      console.error("Visszafejtés sikertelen:", err);
+    }
+  });
+});
+
 document.getElementById('sendButton').addEventListener('click', async () => {
   const message = document.getElementById('messageInput').value;
-  const socket = new WebSocket('wss://rsa-chat-server.onrender.com');
-
-socket.addEventListener('open', () => {
-  console.log('Kapcsolódva a WebSocket szerverhez');
-});
-
-socket.addEventListener('message', event => {
-  const data = event.data;
-  // Itt dekódolhatod, visszafejtheted az üzenetet
-  console.log('Kapott üzenet:', data);
-});
   if (message.length > 120) {
     alert('Az üzenet legfeljebb 120 karakter lehet.');
     return;
@@ -28,25 +47,34 @@ socket.addEventListener('message', event => {
     ["encrypt", "decrypt"]
   );
 
-  // Üzenet titkosítása
+  myPrivateKey = keyPair.privateKey;
+
   const encoder = new TextEncoder();
   const encrypted = await window.crypto.subtle.encrypt(
-    {
-      name: "RSA-OAEP",
-    },
+    { name: "RSA-OAEP" },
     keyPair.publicKey,
     encoder.encode(message)
   );
 
-  // Üzenet visszafejtése
-  const decrypted = await window.crypto.subtle.decrypt(
-    {
-      name: "RSA-OAEP",
-    },
-    keyPair.privateKey,
-    encrypted
-  );
+  const base64 = arrayBufferToBase64(encrypted);
+  const payload = JSON.stringify({ encrypted: base64 });
 
-  const decoder = new TextDecoder();
-  document.getElementById('output').textContent = decoder.decode(decrypted);
+  socket.send(payload);
+  console.log("Elküldve:", payload);
 });
+
+// Base64 konverzió segédfüggvények
+function arrayBufferToBase64(buffer) {
+  const bytes = new Uint8Array(buffer);
+  const binary = bytes.reduce((acc, byte) => acc + String.fromCharCode(byte), "");
+  return btoa(binary);
+}
+
+function base64ToArrayBuffer(base64) {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes.buffer;
+}
