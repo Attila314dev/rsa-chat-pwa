@@ -58,6 +58,10 @@ document.getElementById('sendButton').addEventListener('click', async () => {
 
   const base64 = arrayBufferToBase64(encrypted);
   const payload = JSON.stringify({ encrypted: base64 });
+if (socket.readyState !== WebSocket.OPEN) {
+  alert("A kapcsolat még nem állt fel. Várj egy kicsit, vagy frissítsd az oldalt.");
+  return;
+}
 
   socket.send(payload);
   console.log("Elküldve:", payload);
